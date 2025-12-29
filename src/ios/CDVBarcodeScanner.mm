@@ -358,6 +358,16 @@ parentViewController:(UIViewController*)parentViewController
 
 //--------------------------------------------------------------------------
 - (void)openDialog {
+    // FIX: Prevent iOS 13+ swipe-to-dismiss gesture
+    // Without this fix, users can swipe down to dismiss the scanner,
+    // but the JavaScript callback is not properly triggered, causing
+    // the parent Angular modal to freeze.
+    // Reference: https://github.com/phonegap/phonegap-plugin-barcodescanner/issues/814
+    if (@available(iOS 13.0, *)) {
+        self.viewController.modalPresentationStyle = UIModalPresentationFullScreen;
+        self.viewController.isModalInPresentation = YES;
+    }
+
     [self.parentViewController
      presentViewController:self.viewController
      animated:self.isTransitionAnimated completion:nil
