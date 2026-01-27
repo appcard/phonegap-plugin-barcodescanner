@@ -365,7 +365,7 @@ parentViewController:(UIViewController*)parentViewController
     // Reference: https://github.com/phonegap/phonegap-plugin-barcodescanner/issues/814
     if (@available(iOS 13.0, *)) {
         self.viewController.modalPresentationStyle = UIModalPresentationFullScreen;
-        self.viewController.isModalInPresentation = YES;
+        self.viewController.modalInPresentation = YES;
     }
 
     [self.parentViewController
