@@ -179,14 +179,31 @@
     if (capabilityError) {
         [self returnError:capabilityError callback:callback];
         return;
-    } else if ([self notHasPermission]) {
-        NSString * error = NSLocalizedString(@"Access to the camera has been prohibited; please enable it in the Settings app to continue.",nil);
-        [self returnError:error callback:callback];
-        return;
     } else if (![self isUsageDescriptionSet]) {
       NSString * error = NSLocalizedString(@"NSCameraUsageDescription is not set in the info.plist", nil);
       [self returnError:error callback:callback];
       return;
+    } else if ([self notHasPermission]) {
+        NSString * error = NSLocalizedString(@"Access to the camera has been prohibited; please enable it in the Settings app to continue.",nil);
+        [self returnError:error callback:callback];
+        return;
+    }
+
+    // On first run the authorization status is NotDetermined, so neither branch above
+    // fires and the scanner gets presented while iOS raises the permission prompt over
+    // it. Starting the capture session is what triggers that prompt, and a denial leaves
+    // the overlay sitting over a black preview with no error ever reaching the callback.
+    // Resolve permission first, then re-enter: the status is decided by then and the
+    // branches above handle it. This must run after the NSCameraUsageDescription check,
+    // since requesting access without that key in the plist terminates the app.
+    if ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo] == AVAuthorizationStatusNotDetermined) {
+        __weak CDVBarcodeScanner* weakSelf = self;
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf scan:command];
+            });
+        }];
+        return;
     }
 
     processor = [[CDVbcsProcessor alloc]
